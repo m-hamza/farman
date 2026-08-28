@@ -52,6 +52,14 @@ const P: Record<string, React.ReactNode> = {
   list: <><path d="M8.5 6h12M8.5 12h12M8.5 18h12" /><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01" /></>,
   filter: <path d="M3 5h18l-7 8v6l-4 2v-8Z" />,
   send: <><path d="M22 2 11 13" /><path d="M22 2l-7 20-4-9-9-4Z" /></>,
+  menu: <><path d="M4 7h16" /><path d="M4 12h10" /><path d="M4 17h16" /></>,
+  bell: <><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z" /><path d="M10 19a2.2 2.2 0 0 0 4 0" /></>,
+  wifi: <><path d="M3 9.5a13 13 0 0 1 18 0" /><path d="M6.5 13a8 8 0 0 1 11 0" /><path d="M10 16.5a3.5 3.5 0 0 1 4 0" /><path d="M12 20h.01" /></>,
+  batt: <><rect x="3" y="8" width="16" height="9" rx="2" /><path d="M21 11v3" /><path d="M6 11v3M9 11v3M12 11v3" /></>,
+  signal: <><path d="M4 18v-2" /><path d="M9 18v-5" /><path d="M14 18V9" /><path d="M19 18V4" /></>,
+  headset: <><path d="M4 14v-2a8 8 0 0 1 16 0v2" /><rect x="3" y="14" width="4" height="6" rx="1.5" /><rect x="17" y="14" width="4" height="6" rx="1.5" /><path d="M20 20a3 3 0 0 1-3 2h-3" /></>,
+  calendar: <><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M8 3v4M16 3v4" /><path d="M4 10h16" /></>,
+  arrowd: <path d="m6 9 6 6 6-6" />,
 };
 
 export function Ic({ n, s = 20, c = "" }: { n: string; s?: number; c?: string }) {
@@ -366,6 +374,27 @@ export function Logo({ size = 40, light }: { size?: number; light?: boolean }) {
 
 export function RoadLine({ className = "" }: { className?: string }) {
   return <div className={`road-line ${className}`} />;
+}
+
+export function Bar({ pct, tone = "#ffc21c", h = 8, className = "" }: { pct: number; tone?: string; h?: number; className?: string }) {
+  return (
+    <div className={`w-full rounded-full bg-mist2 overflow-hidden ${className}`} style={{ height: h }}>
+      <div className="h-full rounded-full transition-all duration-700"
+        style={{ width: `${Math.min(100, Math.max(0, pct))}%`, background: tone }} />
+    </div>
+  );
+}
+
+export function Avatar({ name, size = 44, tone = "#ffc21c", ink = "#14202c" }:
+  { name?: string; size?: number; tone?: string; ink?: string }) {
+  const parts = (name || "?").trim().split(/\s+/);
+  const initials = (parts[0]?.[0] || "") + (parts[1]?.[0] || "");
+  return (
+    <span className="rounded-full grid place-items-center font-display shrink-0 shadow-[inset_0_-2px_0_rgba(0,0,0,0.15)]"
+      style={{ width: size, height: size, background: tone, color: ink, fontSize: size * 0.42 }}>
+      {initials || "؟"}
+    </span>
+  );
 }
 
 export function DiffDots({ d }: { d: number }) {

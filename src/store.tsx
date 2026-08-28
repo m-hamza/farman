@@ -31,6 +31,7 @@ export interface Payment {
   amount: number; status: "pending" | "verified" | "failed"; at: number;
 }
 export interface AuditEntry { id: string; actor: string; action: string; target?: string; before?: string; after?: string; ip: string; at: number }
+export interface Notif { id: string; title: string; body: string; at: number; read: boolean; kind: "sub" | "exam" | "info" }
 export interface Settings {
   otp_expiry: number; otp_max_attempts: number; otp_resend_limit: number;
   session_mode: "kick" | "block"; max_questions_per_exam: number; exam_minutes: number;
@@ -45,6 +46,7 @@ interface PersistShape {
   settings: Settings; plans: Plan[]; gateways: Record<string, boolean>;
   payments: Payment[]; audit: AuditEntry[]; questions: Question[];
   extraTables: SchemaTable[]; activeExam: ActiveExam | null; seeded: boolean;
+  notifs: Record<string, Notif[]>;
 }
 
 interface Toast { id: number; msg: string; kind: "ok" | "err" | "info" }
@@ -73,6 +75,8 @@ interface StoreApi {
   toggleBookmark: (qid: string) => void;
   buyPlan: (planId: Plan["id"], gateway: string) => Promise<{ ok: boolean; error?: string; ref?: string }>;
   verifyPayment: (paymentId: string) => Promise<{ ok: boolean; error?: string }>;
+  cancelPayment: (id: string) => void;
+  notifs: Notif[]; unread: number; markNotifsRead: () => void;
   /* ---------- admin ---------- */
   saveSettings: (s: Settings) => void;
   setMatrix: (planId: Plan["id"], kind: "cats" | "contents", itemId: string, on: boolean) => void;
@@ -119,7 +123,7 @@ function defaults(): PersistShape {
     plans: JSON.parse(JSON.stringify(PLANS)),
     gateways: { zarinpal: true, cafebazaar: true },
     payments: [], audit: [], questions: JSON.parse(JSON.stringify(QUESTIONS)),
-    extraTables: [], activeExam: null, seeded: false,
+    extraTables: [], activeExam: null, seeded: false, notifs: {},
   };
 }
 
@@ -188,6 +192,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const audit = useCallback((actor: string, action: string, target?: string, before?: string, after?: string) => {
     setS(s => ({ ...s, audit: [{ id: uid(), actor, action, target, before, after, ip: "185.23.110.4", at: now() }, ...s.audit].slice(0, 250) }));
   }, []);
+
+  function pushNotif(userId: string, title: string, body: string, kind: Notif["kind"]) {
+    setS(s => ({
+      ...s,
+      notifs: {
+        ...s.notifs,
+        [userId]: [{ id: uid(), title, body, at: now(), read: false, kind }, ...(s.notifs[userId] || [])].slice(0, 30),
+      },
+    }));
+  }
+
+  const markNotifsRead = useCallback(() => {
+    const u = Sref.current.currentUserId;
+    if (!u) return;
+    setS(s => ({ ...s, notifs: { ...s.notifs, [u]: (s.notifs[u] || []).map(n => ({ ...n, read: true })) } }));
+  }, []);
+
+  const cancelPayment = useCallback((id: string) => {
+    setS(s => ({ ...s, payments: s.payments.map(p => (p.id === id && p.status === "pending" ? { ...p, status: "failed" as const } : p)) }));
+    toast("پرداخت لغو شد؛ تراکنش ناموفق ثبت شد.", "info");
+  }, [toast]);
 
   /* ---------- derived ---------- */
   const user = S.users.find(u => u.id === S.currentUserId) || null;
@@ -258,6 +283,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       activeExam: isNew ? null : s.activeExam,
     }));
     audit(phone, "login.otp_verified", "sessions", undefined, "single-session enforced");
+    if (isNew) pushNotif(u.id, "به فرمان خوش آمدید", "حساب شما ساخته شد. پروفایل را تکمیل کنید تا دسترسی رایگان فعال شود.", "info");
     return { ok: true, isNew };
   }, [audit]);
 
@@ -274,6 +300,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         marketing_consent_version: d.marketing_consent ? "consent-v1" : undefined,
       } : u),
     }));
+    const cid = Sref.current.currentUserId;
+    if (cid) pushNotif(cid, "پروفایل تکمیل شد", "دسترسی رایگان شما فعال است. برای آزمون‌های نامحدود، اشتراک یک‌ساله تهیه کنید.", "info");
     return { ok: true };
   }, []);
 
@@ -386,6 +414,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       };
     });
     audit("system", "exam.finished", exam.cat, undefined, `${score}/${total}`);
+    pushNotif(
+      exam.user_id,
+      rec.passed ? "قبول شدید! 🎉" : "این بار نشد؛ نزدیک بود!",
+      `نتیجه آزمون: ${fa(score)} از ${fa(total)} (${fa(rec.percent)}٪)${wrongIds.length ? ` — ${fa(wrongIds.length)} سوال به لیست اشتباه‌ها رفت.` : ""}`,
+      "exam",
+    );
     return rec;
   }, [audit]);
 
@@ -435,6 +469,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       payments: s.payments.map(p => (p.id === paymentId ? { ...p, status: "verified" as const } : p)),
     }));
     audit("gateway", "payment.verified", `${pay.ref}`, "pending", "verified");
+    pushNotif(pay.user_id, "اشتراک یک‌ساله فعال شد", "دسترسی کامل به همه دسته‌ها و آموزش‌ها تا ۳۶۵ روز آینده فعال است.", "sub");
     toast("پرداخت تأیید شد؛ اشتراک فعال شد 🎉");
     return { ok: true };
   }, [audit, toast]);
@@ -583,7 +618,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     plan, sub, daysLeft, canCat, canContent, todayExams, toast,
     requestOtp, verifyOtp, completeProfile, updateProfile, logout,
     startExam, answer, finishExam, abandonExam, toggleBookmark,
-    buyPlan, verifyPayment,
+    buyPlan, verifyPayment, cancelPayment,
+    notifs: user ? S.notifs[user.id] || [] : [],
+    unread: user ? (S.notifs[user.id] || []).filter(n => !n.read).length : 0,
+    markNotifsRead,
     saveSettings, setMatrix, updatePlan, setGateway, revokeSession, adminGrant,
     updateQuestion, bulkQuestions, importQuestions, commitImport, createTable, dropTable,
   };
