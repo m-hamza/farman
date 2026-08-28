@@ -162,6 +162,10 @@ body::before {
 ::selection { background: rgba(255, 194, 28, 0.45); }
 * { -webkit-tap-highlight-color: transparent; }
 
+/* قفل سراسری: هیچ عنصری نباید از طرفین بیرون بزند */
+html, body { overflow-x: clip; }
+.app-frame, main { overflow-x: clip; }
+
 @keyframes kf-screen { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 .anim-screen { animation: kf-screen 0.34s cubic-bezier(0.16, 1, 0.3, 1) both; }
 

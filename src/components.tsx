@@ -281,14 +281,18 @@ export function Bars({ data, tone = "#2e6fae", h = 74, passLine }:
       {passLine !== undefined && (
         <div className="absolute inset-x-0 border-t border-dashed border-fail/60 z-0" style={{ bottom: `${(passLine / max) * 100}%` }} />
       )}
-      {data.map((v, i) => (
-        <div key={i} className="flex-1 rounded-t-md bar-grow relative z-10 group"
-          style={{ height: `${Math.max(5, (v / max) * 100)}%`, background: v >= (passLine ?? 0) ? tone : "#d5453a", animationDelay: `${i * 60}ms` }}>
-          <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-inksoft opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-            {v.toLocaleString("fa-IR")}٪
-          </span>
-        </div>
-      ))}
+      {data.map((v, i) => {
+        /* tooltip میله‌های لبه مهار می‌شود تا از ظرف نمودار بیرون نزند */
+        const anchor = i === 0 ? "right-0" : i === data.length - 1 ? "left-0" : "left-1/2 -translate-x-1/2";
+        return (
+          <div key={i} className="flex-1 rounded-t-md bar-grow relative z-10 group min-w-0"
+            style={{ height: `${Math.max(5, (v / max) * 100)}%`, background: v >= (passLine ?? 0) ? tone : "#d5453a", animationDelay: `${i * 60}ms` }}>
+            <span className={`absolute -top-6 ${anchor} text-[10px] font-bold text-inksoft opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap`}>
+              {v.toLocaleString("fa-IR")}٪
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }

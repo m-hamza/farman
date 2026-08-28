@@ -213,7 +213,7 @@ export default function Dashboard({ nav, loading }: { nav: NavFn; loading: boole
                 <span className="w-9 h-9 rounded-xl bg-mist2 text-mut grid place-items-center shrink-0"><Ic n="lock" s={17} /></span>
                 <span className="flex-1">
                   <span className="block font-bold text-[14px] text-ink leading-6">{a.title}</span>
-                  <span className="text-[11.5px] font-bold text-branddeep">در طرح استاندارد و حرفه‌ای باز می‌شود</span>
+                  <span className="text-[11.5px] font-bold text-branddeep">با اشتراک یک‌ساله باز می‌شود</span>
                 </span>
                 <Ic n="crown" s={18} c="text-branddeep" />
               </Card>

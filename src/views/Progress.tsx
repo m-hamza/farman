@@ -39,16 +39,17 @@ export default function Progress({ nav, initTab }: { nav: NavFn; initTab?: strin
         <p className="text-[13.5px] text-mut mt-1">تحلیل دقیق عملکرد؛ جایی که ضعف داری را پیدا کن و تقویتش کن.</p>
       </div>
 
-      <div className="flex gap-2 mb-6 anim-up" style={{ animationDelay: "60ms" }}>
+      {/* تب‌بندی قطعه‌ای — سه‌ستونه ثابت، هرگز از عرض بیرون نمی‌زند */}
+      <div className="grid grid-cols-3 gap-1.5 p-1.5 rounded-2xl bg-mist2/70 border border-line mb-6 anim-up" style={{ animationDelay: "60ms" }}>
         {[
           { id: "stats", label: "آمار کلی", icon: "chart" },
           { id: "wrongs", label: `اشتباه‌ها (${fa(s.wrongs.length)})`, icon: "target" },
           { id: "marks", label: `نشان‌شده‌ها (${fa(s.bookmarks.length)})`, icon: "star" },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`px-4 py-2.5 rounded-xl text-[13px] font-bold border-2 transition-all flex items-center gap-2 ${
-              tab === t.id ? "bg-asphalt text-white border-asphalt shadow-pop" : "border-line bg-paper text-inksoft hover:border-asphalt3"}`}>
-            <Ic n={t.icon} s={15} /> {t.label}
+            className={`min-w-0 py-2.5 px-1 rounded-xl text-[11.5px] sm:text-[12.5px] font-bold transition-all flex items-center justify-center gap-1.5 ${
+              tab === t.id ? "bg-asphalt text-white shadow-pop" : "text-inksoft hover:bg-paper"}`}>
+            <Ic n={t.icon} s={14} /> <span className="truncate">{t.label}</span>
           </button>
         ))}
       </div>
@@ -85,10 +86,10 @@ export default function Progress({ nav, initTab }: { nav: NavFn; initTab?: strin
 
           <Reveal>
             <Card className="p-6 mt-5">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between gap-2 flex-wrap mb-6">
                 <h3 className="font-display text-[21px] text-ink">روند ۱۲ آزمون اخیر</h3>
                 <span className="text-[11.5px] font-bold text-mut flex items-center gap-1.5">
-                  <span className="w-4 border-t-2 border-dashed border-fail" /> خط قبولی {fa(s.settings.pass_percent)}٪
+                  <span className="w-4 border-t-2 border-dashed border-fail shrink-0" /> خط قبولی {fa(s.settings.pass_percent)}٪
                 </span>
               </div>
               {chart.length ? (
